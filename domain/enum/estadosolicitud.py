@@ -1,0 +1,7 @@
+from enum import Enum
+
+class EstadoSolicitud(Enum):
+    ENVIADA = "ENVIADA"
+    EN_REVISION = "EN_REVISION"
+    RECHAZADA = "RECHAZADA"
+    CONVERTIDA_EN_SERVICIO = "CONVERTIDA_EN_SERVICIO"
