@@ -10,7 +10,7 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 - [x] Crear interfaz `SolicitudRepository` en `domain/repositories/`
 - [x] Crear implementación `InMemorySolicitudRepository` en `infrastructure/repositories/`
 - [x] Escribir pruebas del repositorio (8 pruebas, todas pasando)
-- [x] Ejecutar y validar todas las pruebas (40/40 passing)
+- [x] Ejecutar y validar todas las pruebas (42/42 passing)
 
 ### Repositorio de Servicio
 - [x] Crear interfaz `ServicioRepository` en `domain/repositories/`
@@ -26,6 +26,7 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 ### Casos de uso de Servicio (Application Layer)
 - [x] `MarcarServicioProximoAIniciar` - Caso de uso para avisar que el técnico está cerca, pasa un servicio de PENDIENTE a PROXIMO_A_INICIAR (con 2 pruebas en `tests/application/test_marcar_servicio_proximo_a_iniciar.py`)
 - [x] **#16** `IniciarServicio` - Caso de uso para pasar un servicio de PROXIMO_A_INICIAR a EN_CURSO (con 2 pruebas en `tests/application/test_iniciar_servicio.py`)
+- [x] **#17** `FinalizarServicio` - Caso de uso para pasar un servicio de EN_CURSO a FINALIZADO (con 2 pruebas en `tests/application/test_finalizar_servicio.py`)
 
 ### Mantenimiento
 - [x] Mover `test_rechazar_solicitud.py` a `tests/application/` y renombrar su test con un nombre descriptivo
@@ -39,7 +40,6 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 ### 📋 Fase 3: Casos de uso de Servicio
 Se siguen en el orden del ciclo de estados: `PENDIENTE → PROXIMO_A_INICIAR → EN_CURSO → FINALIZADO`
 
-- [ ] **#17** `FinalizarServicio` - Caso de uso para pasar un servicio de EN_CURSO a FINALIZADO
 - [ ] **#15** `MostrarCitasHoy` - Caso de uso para listar servicios del día (usa `listar_por_rango`)
 
 ### 🗄️ Fase 4: Implementación con SQL Server
@@ -67,15 +67,15 @@ Se siguen en el orden del ciclo de estados: `PENDIENTE → PROXIMO_A_INICIAR →
 ## 📊 Progreso General
 
 ```
-Tareas completadas: 13/18 (72.2%)
-Tareas pendientes:   5/18 (27.8%)
+Tareas completadas: 14/18 (77.8%)
+Tareas pendientes:   4/18 (22.2%)
 ```
 
 ### Desglose por capa
 ```
 Domain:          [██████████] 100% (5/5)
 Infrastructure:  [█████░░░░░]  50% (2/4)
-Application:     [███████░░░]  75% (6/8)
+Application:     [█████████░]  88% (7/8)
 Presentation:    [░░░░░░░░░░]   0% (0/1)
 ```
 
