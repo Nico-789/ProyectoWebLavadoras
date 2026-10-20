@@ -10,7 +10,7 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 - [x] Crear interfaz `SolicitudRepository` en `domain/repositories/`
 - [x] Crear implementación `InMemorySolicitudRepository` en `infrastructure/repositories/`
 - [x] Escribir pruebas del repositorio (8 pruebas, todas pasando)
-- [x] Ejecutar y validar todas las pruebas (38/38 passing)
+- [x] Ejecutar y validar todas las pruebas (40/40 passing)
 
 ### Repositorio de Servicio
 - [x] Crear interfaz `ServicioRepository` en `domain/repositories/`
@@ -24,6 +24,7 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 - [x] **#13** `ConvertirSolicitudEnServicio` - Caso de uso para convertir solicitud en servicio
 
 ### Casos de uso de Servicio (Application Layer)
+- [x] `MarcarServicioProximoAIniciar` - Caso de uso para avisar que el técnico está cerca, pasa un servicio de PENDIENTE a PROXIMO_A_INICIAR (con 2 pruebas en `tests/application/test_marcar_servicio_proximo_a_iniciar.py`)
 - [x] **#16** `IniciarServicio` - Caso de uso para pasar un servicio de PROXIMO_A_INICIAR a EN_CURSO (con 2 pruebas en `tests/application/test_iniciar_servicio.py`)
 
 ### Mantenimiento
@@ -38,7 +39,6 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 ### 📋 Fase 3: Casos de uso de Servicio
 Se siguen en el orden del ciclo de estados: `PENDIENTE → PROXIMO_A_INICIAR → EN_CURSO → FINALIZADO`
 
-- [ ] `MarcarServicioProximoAIniciar` - Caso de uso para avisar que el técnico está cerca (PENDIENTE → PROXIMO_A_INICIAR). Hoy solo la entidad llama a `marcar_proximo_a_iniciar()`
 - [ ] **#17** `FinalizarServicio` - Caso de uso para pasar un servicio de EN_CURSO a FINALIZADO
 - [ ] **#15** `MostrarCitasHoy` - Caso de uso para listar servicios del día (usa `listar_por_rango`)
 
@@ -60,21 +60,22 @@ Se siguen en el orden del ciclo de estados: `PENDIENTE → PROXIMO_A_INICIAR →
 
 - El test de `IniciarServicio` no detecta que falte la llamada a `guardar`, porque el repositorio en memoria guarda el mismo objeto. Revisar al implementar SQL Server.
 - `ConvertirSolicitudEnServicio` crea el servicio con `id=1` fijo. Con varios servicios se pisarían entre sí. Corregir antes de la API o de SQL Server.
+- `IniciarServicio` y `MarcarServicioProximoAIniciar` no validan que el servicio exista: si `obtener_por_id` no encuentra nada, el siguiente paso falla con un error poco claro. Agregar la validación (y su prueba) en ambos y en los casos de uso de Servicio que vengan.
 
 ---
 
 ## 📊 Progreso General
 
 ```
-Tareas completadas: 12/18 (66.7%)
-Tareas pendientes:   6/18 (33.3%)
+Tareas completadas: 13/18 (72.2%)
+Tareas pendientes:   5/18 (27.8%)
 ```
 
 ### Desglose por capa
 ```
 Domain:          [██████████] 100% (5/5)
 Infrastructure:  [█████░░░░░]  50% (2/4)
-Application:     [██████░░░░]  63% (5/8)
+Application:     [███████░░░]  75% (6/8)
 Presentation:    [░░░░░░░░░░]   0% (0/1)
 ```
 
