@@ -43,3 +43,14 @@ def test_guardar_asigna_id_y_obtener_por_id_la_recupera(repo):
     assert encontrada is not None
     assert encontrada.problema == "No centrifuga"
     assert encontrada.estado == EstadoSolicitud.ENVIADA
+
+def test_guardar_actualiza_el_estado_si_la_solicitud_ya_tiene_id(repo):
+    solicitud = crear_solicitud()
+    repo.guardar(solicitud)
+    solicitud.poner_en_revision()
+    repo.guardar(solicitud)
+
+    encontrada = repo.obtener_por_id(solicitud.id)
+
+    assert encontrada.estado == EstadoSolicitud.EN_REVISION
+    assert encontrada is not None
