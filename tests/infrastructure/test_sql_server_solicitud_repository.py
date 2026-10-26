@@ -54,3 +54,14 @@ def test_guardar_actualiza_el_estado_si_la_solicitud_ya_tiene_id(repo):
 
     assert encontrada.estado == EstadoSolicitud.EN_REVISION
     assert encontrada is not None
+
+def test_listar_por_estado_devuelve_solo_las_solicitudes_de_ese_estado(repo):
+    enviada = crear_solicitud(problema="No enfria", estado=EstadoSolicitud.ENVIADA)
+    rechazada = crear_solicitud(problema="No prende", estado=EstadoSolicitud.RECHAZADA)
+    repo.guardar(enviada)
+    repo.guardar(rechazada)
+
+    resultado = repo.listar_por_estado(EstadoSolicitud.ENVIADA)
+
+    assert len(resultado) == 1
+    assert resultado[0].problema == "No enfria"

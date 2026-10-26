@@ -20,18 +20,7 @@ class SqlServerSolicitudRepository(SolicitudRepository):
         if fila is None:
             return None
 
-        return Solicitud(
-            id=fila.id,
-            id_electrodomestico=fila.id_electrodomestico,
-            id_tipo_servicio=fila.id_tipo_servicio,
-            problema=fila.problema,
-            fecha_solicitada=fila.fecha_solicitada,
-            hora_solicitada=fila.hora_solicitada,
-            fecha=fila.fecha,
-            hora_inicial=fila.hora_inicial,
-            hora_final=fila.hora_final,
-            estado=EstadoSolicitud[fila.estado],
-        )
+        return self._fila_a_solicitud(fila)
 
     def guardar(self, solicitud: Solicitud) -> None:
         conexion = pyodbc.connect(self._connection_string)
@@ -75,11 +64,35 @@ class SqlServerSolicitudRepository(SolicitudRepository):
         finally:
             conexion.close()
 
-    def listar_por_estado(self, estado: EstadoSolicitud) -> list[Solicitud]:
-        raise NotImplementedError
+    def listar_por_estado(self, estado):
+        with pyodbc.connect(self._connection_string) as conexion:
+            cursor = conexion.cursor()
+            cursor.execute(
+                "SELECT id, id_electrodomestico, id_tipo_servicio, problema, "
+                "fecha_solicitada, hora_solicitada, fecha, hora_inicial, hora_final, estado "
+                "FROM Solicitud WHERE estado = ?",
+                (estado.name,),
+            )
+            filas = cursor.fetchall()
+            return [self._fila_a_solicitud(fila) for fila in filas]
+        
 
     def listar_todas(self) -> list[Solicitud]:
         raise NotImplementedError
 
     def eliminar(self, id: int) -> bool:
-        raise NotImplementedError            
+        raise NotImplementedError
+
+    def _fila_a_solicitud(self, fila):
+        return Solicitud(
+        id=fila.id,
+        id_electrodomestico=fila.id_electrodomestico,
+        id_tipo_servicio=fila.id_tipo_servicio,
+        problema=fila.problema,
+        fecha_solicitada=fila.fecha_solicitada,
+        hora_solicitada=fila.hora_solicitada,
+        fecha=fila.fecha,
+        hora_inicial=fila.hora_inicial,
+        hora_final=fila.hora_final,
+        estado=EstadoSolicitud[fila.estado],
+    )           
