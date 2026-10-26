@@ -77,11 +77,29 @@ class SqlServerSolicitudRepository(SolicitudRepository):
             return [self._fila_a_solicitud(fila) for fila in filas]
         
 
-    def listar_todas(self) -> list[Solicitud]:
-        raise NotImplementedError
+    def listar_todas(self):
+        with pyodbc.connect(self._connection_string) as conexion:
+            cursor = conexion.cursor()
+            cursor.execute(
+                "SELECT id, id_electrodomestico, id_tipo_servicio, problema, "
+                "fecha_solicitada, hora_solicitada, fecha, hora_inicial, hora_final, estado "
+                "FROM Solicitud ORDER BY hora_solicitada"
+            )
+            filas = cursor.fetchall()
+            return [self._fila_a_solicitud(fila) for fila in filas]
 
-    def eliminar(self, id: int) -> bool:
-        raise NotImplementedError
+    def eliminar(self, id):
+        conexion = pyodbc.connect(self._connection_string)
+        try:
+            cursor = conexion.cursor()
+            cursor.execute(
+                "DELETE FROM Solicitud WHERE id = ?",
+                (id,),
+            )
+            conexion.commit()
+            return cursor.rowcount > 0
+        finally:
+            conexion.close()
 
     def _fila_a_solicitud(self, fila):
         return Solicitud(

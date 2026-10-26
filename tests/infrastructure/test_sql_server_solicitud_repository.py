@@ -11,14 +11,14 @@ load_dotenv()
 CONNECTION_STRING = os.getenv("TEST_DB_CONNECTION_STRING")
 
 
-def crear_solicitud(id=None, problema="No centrifuga", estado=EstadoSolicitud.ENVIADA):
+def crear_solicitud(id=None, problema="No centrifuga", estado=EstadoSolicitud.ENVIADA, hora_solicitada=time(10, 0)):
     return Solicitud(
         id=id,
         id_electrodomestico=1,
         id_tipo_servicio=1,
         problema=problema,
         fecha_solicitada=date.today(),
-        hora_solicitada=time(10, 0),
+        hora_solicitada=hora_solicitada,
         fecha=date.today(),
         hora_inicial=time(8, 0),
         hora_final=time(9, 0),
@@ -65,3 +65,30 @@ def test_listar_por_estado_devuelve_solo_las_solicitudes_de_ese_estado(repo):
 
     assert len(resultado) == 1
     assert resultado[0].problema == "No enfria"
+
+def test_listar_todas_devuelve_las_solicitudes_ordenadas_por_hora_solicitada(repo):
+    tarde = crear_solicitud(problema="No enfria", hora_solicitada=time(11, 0))
+    temprano = crear_solicitud(problema="No prende", hora_solicitada=time(9, 0))
+    repo.guardar(tarde)
+    repo.guardar(temprano)
+
+    resultado = repo.listar_todas()
+
+    assert len(resultado) == 2
+    assert resultado[0].problema == "No prende"
+    assert resultado[1].problema == "No enfria"
+
+def test_eliminar_borra_la_solicitud_y_devuelve_true(repo):
+    solicitud = crear_solicitud()
+    repo.guardar(solicitud)
+
+    resultado = repo.eliminar(solicitud.id)
+
+    assert resultado is True
+    assert repo.obtener_por_id(solicitud.id) is None
+
+
+def test_eliminar_devuelve_false_si_el_id_no_existe(repo):
+    resultado = repo.eliminar(9999)
+
+    assert resultado is False
