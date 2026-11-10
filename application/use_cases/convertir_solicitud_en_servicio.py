@@ -18,7 +18,7 @@ class ConvertirSolicitudEnServicio:
         # 3. Crear el nuevo Servicio usando la información de la solicitud
         # Combinamos la fecha y la hora de la solicitud para crear el datetime que pide Servicio
         nuevo_servicio = Servicio(
-            id=1,
+            id=None,
             id_electrodomestico=solicitud.id_electrodomestico,
             id_tipo_servicio=solicitud.id_tipo_servicio,
             problema=solicitud.problema,
