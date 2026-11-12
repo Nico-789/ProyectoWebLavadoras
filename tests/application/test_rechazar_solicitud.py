@@ -4,6 +4,7 @@ import pytest
 from infrastructure.repositories.in_memory_solicitud_repository import InMemorySolicitudRepository
 from datetime import date, time
 from application.use_cases.rechazar_solicitud import RechazarSolicitud
+from application.exceptions import SolicitudNoEncontrada
 
 def crear_solicitud(id=1, problema="No centrifuga", estado=EstadoSolicitud.ENVIADA, hora_solicitada=None):
     return Solicitud(
@@ -35,3 +36,10 @@ def test_crear_solicitud_guarda_y_devuelve_la_solicitud(repo):
 
     solicitud_actualizada=repo.obtener_por_id(s1.id)
     assert solicitud_actualizada.estado==EstadoSolicitud.RECHAZADA
+
+def test_rechazar_solicitud_inexistente_lanza_error():
+    caso_uso = RechazarSolicitud(InMemorySolicitudRepository())
+
+    with pytest.raises(SolicitudNoEncontrada):
+        caso_uso.ejecutar(99999)
+

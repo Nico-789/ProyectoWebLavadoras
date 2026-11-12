@@ -5,6 +5,7 @@ from infrastructure.repositories.in_memory_solicitud_repository import InMemoryS
 from datetime import date, time
 from infrastructure.repositories.in_memory_servicio_repository import InMemoryServicioRepository
 from application.use_cases.convertir_solicitud_en_servicio import ConvertirSolicitudEnServicio
+from application.exceptions import SolicitudNoEncontrada
 def crear_solicitud(id=1, problema="No centrifuga", estado=EstadoSolicitud.ENVIADA, hora_solicitada=None):
     return Solicitud(
         id=id,
@@ -60,3 +61,19 @@ def test_convertir_crea_el_servicio_con_id_none_para_que_lo_asigne_la_base(repo_
     caso_uso.ejecutar(s1.id)
 
     assert repo_servicio.ids_recibidos == [None]
+
+def test_convertir_solicitud_inexistente_lanza_error(repo_solicitud, repo_servicio):
+    caso_uso = ConvertirSolicitudEnServicio(repo_solicitud, repo_servicio)
+
+    with pytest.raises(SolicitudNoEncontrada):
+        caso_uso.ejecutar(99999)
+
+
+def test_convertir_devuelve_el_servicio_creado(repo_solicitud, repo_servicio):
+    s1 = crear_solicitud(id=1, estado=EstadoSolicitud.EN_REVISION)
+    repo_solicitud.guardar(s1)
+
+    servicio = ConvertirSolicitudEnServicio(repo_solicitud, repo_servicio).ejecutar(s1.id)
+
+    assert servicio.problema == "No centrifuga"
+    assert servicio.id is not None

@@ -102,3 +102,12 @@ def test_eliminar_existente(repo, solicitud):
 def test_eliminar_inexistente(repo):
     resultado = repo.eliminar(99)
     assert resultado is False
+
+def test_guardar_asigna_id_si_la_solicitud_no_lo_tiene(repo):
+    solicitud = crear_solicitud(id=None)
+
+    repo.guardar(solicitud)
+
+    assert solicitud.id is not None
+    assert repo.obtener_por_id(solicitud.id) is solicitud
+

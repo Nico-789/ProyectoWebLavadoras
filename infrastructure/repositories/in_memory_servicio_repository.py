@@ -8,6 +8,8 @@ class InMemoryServicioRepository(ServicioRepository):
         self._servicios: dict[int, Servicio] = {}
     
     def guardar(self, servicio: Servicio) -> None:
+        if servicio.id is None:
+            servicio.id = max(self._servicios, default=0) + 1
         self._servicios[servicio.id] = servicio
 
     def obtener_por_id(self, id: int) -> Servicio | None:

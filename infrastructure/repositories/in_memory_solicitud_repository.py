@@ -8,6 +8,8 @@ class InMemorySolicitudRepository(SolicitudRepository):
         self._solicitudes: dict[int, Solicitud] = {}
 
     def guardar(self, solicitud: Solicitud) -> None:
+        if solicitud.id is None:
+            solicitud.id = max(self._solicitudes, default=0) + 1
         self._solicitudes[solicitud.id] = solicitud
 
     def obtener_por_id(self, id: int) -> Solicitud | None:
