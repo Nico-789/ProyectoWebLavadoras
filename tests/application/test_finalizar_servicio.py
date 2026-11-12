@@ -4,6 +4,7 @@ import pytest
 from infrastructure.repositories.in_memory_servicio_repository import InMemoryServicioRepository
 from datetime import datetime
 from application.use_cases.finalizar_servicio import FinalizarServicio
+from application.exceptions import ServicioNoEncontrado
 
 def crear_servicio(id=1, problema="No centrifuga", estado=estadoServicio.PENDIENTE):
     return Servicio(
@@ -41,3 +42,9 @@ def test_finalizar_servicio_sin_estar_en_curso_lanza_value_error(repo, servicio)
     
     with pytest.raises(ValueError):
         caso_uso.ejecutar(servicio.id)
+
+def test_finalizar_servicio_inexistente_lanza_error(repo):
+    caso_uso = FinalizarServicio(repo)
+
+    with pytest.raises(ServicioNoEncontrado):
+        caso_uso.ejecutar(99999)

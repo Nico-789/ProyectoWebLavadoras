@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date, datetime, time, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,6 +9,8 @@ from presentation.api.main import app, obtener_repo_solicitudes
 from domain.enum.estadosolicitud import EstadoSolicitud
 from presentation.api.main import app, obtener_repo_servicios, obtener_repo_solicitudes
 from infrastructure.repositories.in_memory_servicio_repository import InMemoryServicioRepository
+from domain.entities.servicio import Servicio
+from domain.enum.estadoservicio import estadoServicio
 
 
 @pytest.fixture
@@ -130,3 +132,72 @@ def test_convertir_solicitud_sin_revisar_devuelve_conflicto(client, repo):
     respuesta = client.post("/solicitudes/1/convertir")
 
     assert respuesta.status_code == 409
+
+def crear_servicio(id, problema="No centrifuga", estado=estadoServicio.PENDIENTE,
+    fecha_hora_inicio=datetime(2026, 8, 27, 10, 0)):
+    return Servicio(
+        id=id,
+        id_electrodomestico=1,
+        id_tipo_servicio=1,
+        problema=problema,
+        fecha_hora_inicio=fecha_hora_inicio,
+        estado=estado,
+    )
+
+
+def test_marcar_servicio_proximo_a_iniciar_devuelve_el_nuevo_estado(client, repo_servicio):
+    repo_servicio.guardar(crear_servicio(id=1))
+
+    respuesta = client.post("/servicios/1/proximo-a-iniciar")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["estado"] == "PROXIMO_A_INICIAR"
+
+
+def test_iniciar_servicio_devuelve_estado_en_curso(client, repo_servicio):
+    repo_servicio.guardar(crear_servicio(id=1, estado=estadoServicio.PROXIMO_A_INICIAR))
+
+    respuesta = client.post("/servicios/1/iniciar")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["estado"] == "EN_CURSO"
+    assert respuesta.json()["fecha_hora_inicio_real"] is not None
+
+
+def test_finalizar_servicio_devuelve_estado_finalizado(client, repo_servicio):
+    servicio = crear_servicio(id=1)
+    servicio.marcar_proximo_a_iniciar()
+    servicio.iniciar()
+    repo_servicio.guardar(servicio)
+
+    respuesta = client.post("/servicios/1/finalizar")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["estado"] == "FINALIZADO"
+    assert respuesta.json()["duracion_real"] is not None
+
+
+@pytest.mark.parametrize("accion", ["proximo-a-iniciar", "iniciar", "finalizar"])
+def test_transicion_de_servicio_inexistente_devuelve_no_encontrado(client, accion):
+    respuesta = client.post(f"/servicios/99999/{accion}")
+
+    assert respuesta.status_code == 404
+
+
+def test_iniciar_servicio_pendiente_devuelve_conflicto(client, repo_servicio):
+    repo_servicio.guardar(crear_servicio(id=1))
+
+    respuesta = client.post("/servicios/1/iniciar")
+
+    assert respuesta.status_code == 409
+
+
+def test_mostrar_citas_hoy_devuelve_solo_los_servicios_de_hoy(client, repo_servicio):
+    repo_servicio.guardar(crear_servicio(id=1, problema="Hoy", fecha_hora_inicio=datetime.now()))
+    repo_servicio.guardar(crear_servicio(id=2, problema="Pasado", fecha_hora_inicio=datetime.now() + timedelta(days=2)))
+
+    respuesta = client.get("/servicios/hoy")
+
+    assert respuesta.status_code == 200
+    assert len(respuesta.json()) == 1
+    assert respuesta.json()[0]["problema"] == "Hoy"

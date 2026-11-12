@@ -14,6 +14,11 @@ from application.exceptions import SolicitudNoEncontrada
 from application.use_cases.rechazar_solicitud import RechazarSolicitud
 from application.use_cases.convertir_solicitud_en_servicio import ConvertirSolicitudEnServicio
 from infrastructure.repositories.sql_server_servicio_repository import SqlServerServicioRepository
+from application.exceptions import ServicioNoEncontrado
+from application.use_cases.finalizar_servicio import FinalizarServicio
+from application.use_cases.iniciar_servicio import IniciarServicio
+from application.use_cases.marcar_servicio_proximo_a_iniciar import MarcarServicioProximoAIniciar
+from application.use_cases.mostrar_citas_hoy import MostrarCitasHoy
 
 load_dotenv()
 
@@ -145,3 +150,33 @@ def convertir_solicitud(
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error))
     return a_respuesta_servicio(servicio)
+
+def ejecutar_transicion(caso_uso, servicio_id):
+    try:
+        servicio = caso_uso.ejecutar(servicio_id)
+    except ServicioNoEncontrado:
+        raise HTTPException(status_code=404, detail="Servicio no encontrado")
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error))
+    return a_respuesta_servicio(servicio)
+
+
+@app.post("/servicios/{servicio_id}/proximo-a-iniciar", response_model=ServicioRespuesta)
+def marcar_servicio_proximo_a_iniciar(servicio_id: int, repo=Depends(obtener_repo_servicios)):
+    return ejecutar_transicion(MarcarServicioProximoAIniciar(repo), servicio_id)
+
+
+@app.post("/servicios/{servicio_id}/iniciar", response_model=ServicioRespuesta)
+def iniciar_servicio(servicio_id: int, repo=Depends(obtener_repo_servicios)):
+    return ejecutar_transicion(IniciarServicio(repo), servicio_id)
+
+
+@app.post("/servicios/{servicio_id}/finalizar", response_model=ServicioRespuesta)
+def finalizar_servicio(servicio_id: int, repo=Depends(obtener_repo_servicios)):
+    return ejecutar_transicion(FinalizarServicio(repo), servicio_id)
+
+
+@app.get("/servicios/hoy", response_model=list[ServicioRespuesta])
+def mostrar_citas_hoy(repo=Depends(obtener_repo_servicios)):
+    servicios = MostrarCitasHoy(repo).ejecutar()
+    return [a_respuesta_servicio(s) for s in servicios]

@@ -4,6 +4,7 @@ import pytest
 from infrastructure.repositories.in_memory_servicio_repository import InMemoryServicioRepository
 from datetime import datetime
 from application.use_cases.iniciar_servicio import IniciarServicio
+from application.exceptions import ServicioNoEncontrado
 def crear_servicio(id=1, problema="No centrifuga", estado=estadoServicio.PENDIENTE):
     return Servicio(
         id=id,
@@ -40,6 +41,13 @@ def test_iniciar_servicio_pendiente_lanza_value_error(repo,servicio):
 
     with pytest.raises(ValueError):
         caso_uso.ejecutar(servicio.id)
+
+def test_iniciar_servicio_inexistente_lanza_error(repo):
+    caso_uso = IniciarServicio(repo)
+
+    with pytest.raises(ServicioNoEncontrado):
+        caso_uso.ejecutar(99999)
+        
 
 
 

@@ -4,6 +4,7 @@ import pytest
 from infrastructure.repositories.in_memory_servicio_repository import InMemoryServicioRepository
 from datetime import datetime
 from application.use_cases.marcar_servicio_proximo_a_iniciar import MarcarServicioProximoAIniciar
+from application.exceptions import ServicioNoEncontrado
 def crear_servicio(id=1, problema="No centrifuga", estado=estadoServicio.PENDIENTE):
     return Servicio(
         id=id,
@@ -38,3 +39,9 @@ def test_marcar_servicio_proximo_a_iniciar_sin_estar_pendiente_lanza_value_error
     
     with pytest.raises(ValueError):
         caso_uso.ejecutar(servicio.id)
+
+def test_marcar_servicio_proximo_a_iniciar_inexistente_lanza_error(repo):
+    caso_uso = MarcarServicioProximoAIniciar(repo)
+
+    with pytest.raises(ServicioNoEncontrado):
+        caso_uso.ejecutar(99999)

@@ -1,3 +1,4 @@
+from application.exceptions import ServicioNoEncontrado
 from domain.repositories.servicio_repository import ServicioRepository
 
 
@@ -7,5 +8,8 @@ class MarcarServicioProximoAIniciar:
 
     def ejecutar(self, servicio_id):
         servicio = self.servicio_repository.obtener_por_id(servicio_id)
+        if servicio is None:
+            raise ServicioNoEncontrado(servicio_id)
         servicio.marcar_proximo_a_iniciar()
-        return self.servicio_repository.guardar(servicio)
+        self.servicio_repository.guardar(servicio)
+        return servicio
