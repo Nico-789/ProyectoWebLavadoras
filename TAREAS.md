@@ -8,46 +8,45 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 
 ### Repositorio de Solicitud
 - [x] Crear interfaz `SolicitudRepository` en `domain/repositories/`
-- [x] Crear implementación `InMemorySolicitudRepository` en `infrastructure/repositories/`
-- [x] Escribir pruebas del repositorio (8 pruebas, todas pasando)
-- [x] Ejecutar y validar todas las pruebas (57/57 passing)
+- [x] Crear implementación `InMemorySolicitudRepository` en `infrastructure/repositories/` (asigna un id autoincremental cuando llega `id=None`, imitando `IDENTITY`)
+- [x] Escribir pruebas del repositorio (9 pruebas, todas pasando)
+- [x] Ejecutar y validar todas las pruebas (82/82 passing)
 
 ### Repositorio de Servicio
 - [x] Crear interfaz `ServicioRepository` en `domain/repositories/`
-- [x] Crear implementación `InMemoryServicioRepository` en `infrastructure/repositories/`
+- [x] Crear implementación `InMemoryServicioRepository` en `infrastructure/repositories/` (también asigna id autoincremental)
 - [x] Escribir pruebas del repositorio de Servicio (6 pruebas, todas pasando)
 
 ### Casos de uso de Solicitud (Application Layer)
 - [x] `CrearSolicitud` - Caso de uso para crear solicitudes (con prueba en `tests/application/test_crear_solicitud.py`)
 - [x] `ListarSolicitudes` - Caso de uso para listar solicitudes, con orden cronológico
-- [x] **#8** `RechazarSolicitud` - Caso de uso para rechazar solicitudes
-- [x] **#13** `ConvertirSolicitudEnServicio` - Caso de uso para convertir solicitud en servicio
+- [x] **#8** `RechazarSolicitud` - Rechaza solicitudes; lanza `SolicitudNoEncontrada` si no existe y devuelve la solicitud
+- [x] **#13** `ConvertirSolicitudEnServicio` - Convierte solicitud en servicio; crea el servicio con `id=None` (lo asigna la base), lanza `SolicitudNoEncontrada` y devuelve el servicio. Con test espía que vigila el `id=None`
 
 ### Casos de uso de Servicio (Application Layer)
-- [x] `MarcarServicioProximoAIniciar` - Caso de uso para avisar que el técnico está cerca, pasa un servicio de PENDIENTE a PROXIMO_A_INICIAR (con 2 pruebas en `tests/application/test_marcar_servicio_proximo_a_iniciar.py`)
-- [x] **#16** `IniciarServicio` - Caso de uso para pasar un servicio de PROXIMO_A_INICIAR a EN_CURSO (con 2 pruebas en `tests/application/test_iniciar_servicio.py`)
-- [x] **#17** `FinalizarServicio` - Caso de uso para pasar un servicio de EN_CURSO a FINALIZADO (con 2 pruebas en `tests/application/test_finalizar_servicio.py`)
-- [x] **#15** `MostrarCitasHoy` - Caso de uso para listar servicios del día, de las 00:00 a las 23:59:59 de hoy (con 2 pruebas en `tests/application/test_mostrar_citas_hoy.py`)
+- [x] `MarcarServicioProximoAIniciar` - PENDIENTE → PROXIMO_A_INICIAR; lanza `ServicioNoEncontrado` y devuelve el servicio
+- [x] **#16** `IniciarServicio` - PROXIMO_A_INICIAR → EN_CURSO; lanza `ServicioNoEncontrado` y devuelve el servicio
+- [x] **#17** `FinalizarServicio` - EN_CURSO → FINALIZADO; lanza `ServicioNoEncontrado` y devuelve el servicio
+- [x] **#15** `MostrarCitasHoy` - Lista servicios del día, de las 00:00 a las 23:59:59 de hoy
+- [x] Excepciones de aplicación `SolicitudNoEncontrada` y `ServicioNoEncontrado` en `application/exceptions.py`
 
 ### Base de datos (Fase 4)
 - [x] Verificar entorno: SQL Server Express (`localhost\SQLEXPRESS`), driver `ODBC Driver 17 for SQL Server` y `pyodbc`
 - [x] Crear las bases `LavadorasDB` (real) y `LavadorasTestDB` (pruebas) con las tablas `Solicitud` y `Servicio` (id con `IDENTITY`)
 - [x] Guardar las cadenas de conexión en `.env` (`DB_CONNECTION_STRING` y `TEST_DB_CONNECTION_STRING`), ignorado por Git
-- [x] **#9** `SqlServerSolicitudRepository` - Implementación con pyodbc, con sus 5 métodos y 6 pruebas de integración en `tests/infrastructure/test_sql_server_solicitud_repository.py`:
-  - [x] `obtener_por_id`
-  - [x] `guardar` con `INSERT` (asigna el id con `OUTPUT INSERTED.id`) y `UPDATE`
-  - [x] `listar_por_estado` (filtra con `WHERE estado = ?`, convirtiendo el enum con `.name`)
-  - [x] `listar_todas`, ordenada por `hora_solicitada`
-  - [x] `eliminar`, devuelve `True`/`False` según `rowcount`
-  - [x] Método auxiliar `_fila_a_solicitud` (un solo lugar para traducir fila → `Solicitud`)
-- [x] **#10** `SqlServerServicioRepository` - Implementación con pyodbc, con sus 6 métodos y 7 pruebas de integración en `tests/infrastructure/test_sql_server_servicio_repository.py`:
-  - [x] `obtener_por_id`
-  - [x] `guardar` con `INSERT` (10 columnas, sin `id`) y `UPDATE`
-  - [x] `listar_todos`, ordenada por `fecha_hora_inicio`
-  - [x] `listar_por_estado`
-  - [x] `listar_por_rango` (filtra por `fecha_hora_inicio` entre los dos extremos, ambos incluidos)
-  - [x] `eliminar`, devuelve `True`/`False` según `rowcount`
-  - [x] Método auxiliar `_fila_a_servicio` (traduce fila → `Servicio` y asigna los campos reales y calculados después de construirlo)
+- [x] **#9** `SqlServerSolicitudRepository` - 5 métodos y 6 pruebas de integración, con método auxiliar `_fila_a_solicitud`
+- [x] **#10** `SqlServerServicioRepository` - 6 métodos y 7 pruebas de integración, con método auxiliar `_fila_a_servicio`
+
+### API REST (Fase 5)
+- [x] **#5** API con FastAPI en `presentation/api/main.py`, con inyección de dependencias (`Depends`) y tests con `TestClient` usando repositorios en memoria (`tests/presentation/api/test_api_solicitudes.py`):
+  - [x] `GET /health`
+  - [x] `GET /solicitudes` y `POST /solicitudes` (201, la base asigna el id, la fecha y hora de solicitud las pone el servidor)
+  - [x] `POST /solicitudes/{id}/rechazar` (404 si no existe, 409 si la transición no es válida)
+  - [x] `POST /solicitudes/{id}/convertir` (201, devuelve el servicio creado)
+  - [x] `POST /servicios/{id}/proximo-a-iniciar`, `/iniciar` y `/finalizar` (404 y 409)
+  - [x] `GET /servicios/hoy`
+- [x] Modelos Pydantic de entrada y respuesta en la capa de presentación (`SolicitudEntrada`, `SolicitudRespuesta`, `ServicioRespuesta`)
+- [x] `SolicitudDTO` acepta `id=None`
 
 ### Mantenimiento
 - [x] Mover `test_rechazar_solicitud.py` a `tests/application/` y renombrar su test con un nombre descriptivo
@@ -55,44 +54,47 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 - [x] Agregar `.gitignore` y subir el proyecto a GitHub
 - [x] Renombrar `git.ignore` a `.gitignore` (con el nombre equivocado Git no ignoraba nada)
 - [x] Sacar los archivos `.pyc` y `__pycache__` del repositorio
-- [x] Ampliar el helper de tests `crear_solicitud` con el parámetro `hora_solicitada`
-- [x] Crear el helper de tests `crear_servicio` con `problema`, `estado` y `fecha_hora_inicio`
+- [x] Helpers de tests `crear_solicitud` (con `hora_solicitada`) y `crear_servicio`
 
 ---
 
 ## ⏳ Tareas Pendientes
 
-### 🌐 Fase 5: API REST
-- [ ] **#5** Crear API con FastAPI (endpoints que delegan a casos de uso)
-
 ### 🧹 Pendientes menores
-- [ ] Escribir `README.md` (qué hace el proyecto, cómo correr `pytest`, estructura de carpetas)
-- [ ] Poner descripción y topics al repositorio de GitHub (hoy es privado: hacerlo público cuando esté presentable, tras confirmar que `.env` nunca entró al historial)
+- [ ] Escribir `README.md` (qué hace el proyecto, cómo correr `pytest`, cómo levantar la API con `uvicorn presentation.api.main:app --reload`, estructura de carpetas)
+- [ ] Poner descripción y topics al repositorio de GitHub
+- [ ] Hacer público el repositorio (hoy es privado): antes, confirmar que `.env` nunca entró al historial (`git log --all --oneline -- .env` debe salir vacío)
 - [ ] Renombrar el test `test_eliminar_borra_la_solicitud_y_devuelve_true` del repositorio de Servicio a `..._borra_el_servicio_...`
+- [ ] Renombrar el parámetro `solicitud` a `servicio` en `guardar` de `ServicioRepository` y de `InMemoryServicioRepository`
+- [ ] Devolver las anotaciones de tipo en las firmas de los repositorios SQL
+- [ ] Limpiar imports sin usar en los casos de uso (`ListarSolicitudes`, `CrearSolicitud`)
+- [ ] Separar los tests de integración (necesitan SQL Server encendido) de los unitarios, para poder correrlos por separado
 - [ ] Notificar al cliente cuando el servicio pasa a PROXIMO_A_INICIAR (efecto de infraestructura, fuera del dominio)
 - [ ] Implementar la regla de negocio de agendar solo entre las 6 am y las 4 pm (hoy nada la valida)
-- [ ] Renombrar el parámetro `solicitud` a `servicio` en `guardar` de `ServicioRepository` y de `InMemoryServicioRepository`
-- [ ] Separar los tests de integración (necesitan SQL Server encendido) de los unitarios, para poder correrlos por separado
-- [ ] Devolver las anotaciones de tipo en las firmas de los repositorios SQL
+
+### 🔭 Siguientes pasos posibles
+- [ ] Probar la API de punta a punta contra SQL Server real (hoy sus tests usan repositorios en memoria)
+- [ ] Endpoints de consulta que faltan: `GET /solicitudes/{id}`, `GET /servicios/{id}`, filtro por estado
+- [ ] Tablas y llaves foráneas de `Electrodomestico` y `TipoServicio` (hoy los ids no se validan)
+- [ ] Autenticación en la API
 
 ---
 
 ## ⚠️ Deuda técnica conocida
 
-- El test de `IniciarServicio` no detecta que falte la llamada a `guardar`, porque el repositorio en memoria guarda el mismo objeto. Probar el caso de uso contra `SqlServerServicioRepository`, donde sí importará.
-- `ConvertirSolicitudEnServicio` crea el servicio con `id=1` fijo. Con `IDENTITY` el id lo asigna la base, así que hay que crear el servicio con `id=None`. Verificar que esté corregido antes de la API.
-- `CrearSolicitud` y `ConvertirSolicitudEnServicio` deben crear las entidades con `id=None` (los constructores lo aceptan, pero hay que revisar los casos de uso).
-- `IniciarServicio`, `MarcarServicioProximoAIniciar` y `FinalizarServicio` no validan que el servicio exista: si `obtener_por_id` no encuentra nada, el siguiente paso falla con un error poco claro. Agregar la validación (y su prueba) en los tres.
-- `MostrarCitasHoy` usa `date.today()` por dentro, así que sus tests dependen de la fecha del sistema. Si hiciera falta, pasar la fecha como parámetro de `ejecutar`.
+- `MostrarCitasHoy` usa `date.today()` por dentro, así que sus tests (y el de `GET /servicios/hoy`) dependen de la fecha del sistema. Si hiciera falta, pasar la fecha como parámetro de `ejecutar`.
 - En los dos repositorios SQL, los métodos de lectura (`obtener_por_id` y los `listar_*`) usan `with` (que en `pyodbc` no cierra la conexión), mientras `guardar` y `eliminar` usan `try/finally` con `close()`. Unificar el estilo de conexión.
+- Los tests de la API usan repositorios en memoria, que no imitan todo SQL Server (por ejemplo, el comportamiento de `IDENTITY` solo se prueba en los tests de integración).
+- `CrearSolicitud` y los endpoints no validan que `id_electrodomestico` e `id_tipo_servicio` existan (no hay tablas ni llaves foráneas todavía).
 
 ---
 
 ## 📊 Progreso General
 
 ```
-Tareas completadas: 17/18 (94.4%)
-Tareas pendientes:   1/18 (5.6%)
+Tareas completadas: 18/18 (100%)
+Tareas pendientes:   0/18 (0%)
+Tests:              82/82 pasando
 ```
 
 ### Desglose por capa
@@ -100,7 +102,7 @@ Tareas pendientes:   1/18 (5.6%)
 Domain:          [██████████] 100% (5/5)
 Infrastructure:  [██████████] 100% (4/4)
 Application:     [██████████] 100% (8/8)
-Presentation:    [░░░░░░░░░░]   0% (0/1)
+Presentation:    [██████████] 100% (1/1)
 ```
 
 ---
