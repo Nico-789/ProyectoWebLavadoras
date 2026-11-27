@@ -48,6 +48,14 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 - [x] Modelos Pydantic de entrada y respuesta en la capa de presentación (`SolicitudEntrada`, `SolicitudRespuesta`, `ServicioRespuesta`)
 - [x] `SolicitudDTO` acepta `id=None`
 
+### Login para tu papá (Fase 6, avance)
+- [x] **#1** Entidad `Usuario` (`id`, `nombre_usuario`, `password_hash`); un nombre vacío o solo con espacios lanza `ValueError` (3 pruebas)
+- [x] **#2** `UsuarioRepository` en `domain/repositories/` e `InMemoryUsuarioRepository` con `obtener_por_nombre` y `guardar` (id autoincremental y nombre único, que lanza `ValueError`). 6 pruebas. `obtener_por_id` se dejó fuera a propósito: ningún caso de uso lo necesita
+- [x] **#3** Hasheo de contraseñas: interfaz `HasheadorPassword` en `application/interfaces/` y `Argon2Hasheador` en `infrastructure/security/` (librería `argon2-cffi`, sin criptografía propia). 5 pruebas
+- [x] **#4** Caso de uso `IniciarSesion` y excepción `CredencialesInvalidas` (sin parámetros, mensaje fijo). Usuario inexistente y contraseña mala lanzan exactamente el mismo error. Devuelve el `nombre_usuario`. 3 pruebas con un hasheador falso
+- [x] **#5 (parcial)** Tabla `Usuario` con `UNIQUE` en `nombre_usuario` en `LavadorasDB` y `LavadorasTestDB`; `SqlServerUsuarioRepository` (`INSERT`, `UPDATE`, y el `IntegrityError` de la base se traduce al mismo `ValueError` que lanza el repositorio en memoria). 4 pruebas de integración: guardar y recuperar, nombre inexistente, nombre repetido y actualización sin duplicar
+- [x] Mutation testing manual aplicado a `Usuario`, `InMemoryUsuarioRepository`, `Argon2Hasheador`, `IniciarSesion` y al repositorio SQL
+
 ### Mantenimiento
 - [x] Mover `test_rechazar_solicitud.py` a `tests/application/` y renombrar su test con un nombre descriptivo
 - [x] Agregar `pytest.ini` en la raíz para que `pytest` encuentre los módulos del proyecto
@@ -59,6 +67,46 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 ---
 
 ## ⏳ Tareas Pendientes
+
+### 🔐 Login para tu papá (lo que falta)
+- [ ] **#5** Script para crear el usuario de tu papá: la contraseña no queda en el código ni en Git (decidir si se pide por consola o desde una variable de entorno); usa `Argon2Hasheador` y `SqlServerUsuarioRepository`
+- [ ] **#6** Sesión con cookie en la API:
+  - [ ] Decidir cookie firmada o JWT (recomendado para este panel: cookie firmada, con solo el `nombre_usuario` adentro)
+  - [ ] `POST /login` que fija la cookie firmada y con vencimiento
+  - [ ] `POST /logout`
+  - [ ] Clave secreta de la sesión en `.env`
+  - [ ] Tests: cookie al entrar bien, nada al entrar mal
+- [ ] **#7** Proteger los endpoints del panel:
+  - [ ] Dependencia que exige sesión y responde `401` si no la hay
+  - [ ] Aplicarla a listar, rechazar, convertir, las tres transiciones de servicio y `GET /servicios/hoy`
+  - [ ] Dejar públicos `POST /solicitudes` y `/health`
+  - [ ] Tests: cada endpoint protegido responde `401` sin sesión
+  - [ ] Actualizar los tests actuales de la API, que hoy no mandan sesión
+- [ ] **#8** Límite de intentos de login, para frenar adivinar contraseñas
+- [ ] Opcional: igualar el tiempo de respuesta entre usuario inexistente y contraseña mala (hoy el primero responde más rápido porque no calcula ningún hash)
+- [ ] Decidir si `IniciarSesion` devuelve `usuario.nombre_usuario` en vez del parámetro recibido
+- [ ] Limpieza del login: renombrar `tests/application/test_aplication.py` a `test_iniciar_sesion.py`, borrar el import de `Usuario` sin usar en `iniciar_sesion.py`, guardar `scripts/crear_tabla_usuario.sql` en el repo y crear `requirements.txt` (con `argon2-cffi`)
+
+### 📝 Formulario del cliente
+- [ ] **#1** Datos del cliente en la solicitud (hoy no se guarda quién la envía):
+  - [ ] Agregar `nombre_cliente` y `telefono_cliente` a la entidad `Solicitud`, a `SolicitudDTO` y a `CrearSolicitud`
+  - [ ] Agregar las dos columnas a la tabla `Solicitud` en las dos bases
+  - [ ] Ajustar `SqlServerSolicitudRepository` (`INSERT`, `UPDATE`, `SELECT` y `_fila_a_solicitud`)
+  - [ ] Ajustar los modelos de la API y los tests existentes
+  - [ ] Validar que el nombre y el teléfono no vengan vacíos y que el teléfono tenga un formato válido
+- [ ] **#2** Revisar `POST /solicitudes`: validaciones de longitud y de fecha (que no sea pasada)
+- [ ] **#3** Página del formulario servida por la propia API (electrodoméstico, problema, día, hora, nombre y teléfono):
+  - [ ] Mensaje de confirmación al enviar
+  - [ ] Mensajes claros de error
+  - [ ] Que se vea bien desde el celular
+- [ ] **#4** Protección contra basura en el formulario público: límite de envíos por dirección y campo oculto trampa (honeypot)
+- [ ] **#5** Aviso de datos personales en el formulario, diciendo para qué se usan el nombre y el teléfono
+- [ ] **#6** Tests: el formulario envía bien, rechaza datos inválidos y la solicitud queda guardada
+
+### 🧭 Decisiones pendientes
+- Cómo se llena el electrodoméstico y el tipo de servicio: hoy son dos ids sueltos sin tablas que los definan; el formulario necesita una lista fija o esas tablas
+- Que el horario permitido (6 am a 4 pm) quede validado en el formulario (ver también la regla de negocio en los pendientes menores)
+- Cookie firmada o JWT para la sesión (punto 6 del login)
 
 ### 🧹 Pendientes menores
 - [ ] Escribir `README.md` (qué hace el proyecto, cómo correr `pytest`, cómo levantar la API con `uvicorn presentation.api.main:app --reload`, estructura de carpetas)
@@ -76,7 +124,6 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 - [ ] Probar la API de punta a punta contra SQL Server real (hoy sus tests usan repositorios en memoria)
 - [ ] Endpoints de consulta que faltan: `GET /solicitudes/{id}`, `GET /servicios/{id}`, filtro por estado
 - [ ] Tablas y llaves foráneas de `Electrodomestico` y `TipoServicio` (hoy los ids no se validan)
-- [ ] Autenticación en la API
 
 ---
 
@@ -86,18 +133,21 @@ Roadmap de implementación organizado por fases. Se actualiza a medida que se co
 - En los dos repositorios SQL, los métodos de lectura (`obtener_por_id` y los `listar_*`) usan `with` (que en `pyodbc` no cierra la conexión), mientras `guardar` y `eliminar` usan `try/finally` con `close()`. Unificar el estilo de conexión.
 - Los tests de la API usan repositorios en memoria, que no imitan todo SQL Server (por ejemplo, el comportamiento de `IDENTITY` solo se prueba en los tests de integración).
 - `CrearSolicitud` y los endpoints no validan que `id_electrodomestico` e `id_tipo_servicio` existan (no hay tablas ni llaves foráneas todavía).
+- `InMemoryUsuarioRepository` distingue mayúsculas (`papa` y `Papa` son usuarios distintos) y SQL Server, con su configuración habitual, no. Los dos repositorios se comportan distinto en ese punto.
+- `SqlServerUsuarioRepository` traduce cualquier `IntegrityError` a "Ya existe un usuario con ese nombre". Hoy el único motivo posible es el `UNIQUE`, pero si apareciera otra restricción el mensaje sería engañoso.
+- Un `UPDATE` sobre un id que no existe no falla ni crea nada en SQL Server; el repositorio en memoria lo crearía.
 
 ---
 
 ## 📊 Progreso General
 
 ```
-Tareas completadas: 18/18 (100%)
-Tareas pendientes:   0/18 (0%)
-Tests:              82/82 pasando
+Tests:              103/103 pasando
+Login para tu papá: 4 de 8 puntos completos, el 5 va a la mitad
+Formulario cliente: 0 de 6 puntos
 ```
 
-### Desglose por capa
+### Desglose por capa (las capas originales)
 ```
 Domain:          [██████████] 100% (5/5)
 Infrastructure:  [██████████] 100% (4/4)
