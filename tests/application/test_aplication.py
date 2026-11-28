@@ -3,15 +3,8 @@ from application.interfaces.hasheador_password import HasheadorPassword
 from domain.entities.usuario import Usuario
 from infrastructure.repositories.in_memory_usuario_repository import InMemoryUsuarioRepository
 from application.use_cases.iniciar_sesion import IniciarSesion
-from application.interfaces.hasheador_password import HasheadorPassword
 from application.exceptions import CredencialesInvalidas
-
-class HasheadorFalso(HasheadorPassword):
-    def hashear(self, password):
-        return f"hash-falso:{password}"
-
-    def verificar(self, password, password_hash):
-        return password_hash == self.hashear(password)
+from tests.application.fakes import HasheadorFalso
 
 def crear_usuario(id=None, nombre_usuario="papa", password_hash="hash-de-prueba"):
     return Usuario(id=id, nombre_usuario=nombre_usuario, password_hash=password_hash)
@@ -43,3 +36,4 @@ def test_iniciar_sesion_con_usuario_inexistente_lanza_credenciales_invalidas(rep
     caso_uso = IniciarSesion(repo, hasheador)
     with pytest.raises(CredencialesInvalidas, match="^USUARIO O CONTRASEÑA INCORRECTOS$"):
         caso_uso.ejecutar("papa", "contraseña145")
+
